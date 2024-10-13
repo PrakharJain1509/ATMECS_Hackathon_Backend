@@ -1,19 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { useCodeMirror } from '@uiw/react-codemirror';
-import { python } from '@codemirror/lang-python'; // For Python syntax highlighting
+import { python } from '@codemirror/lang-python';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import Button from './ui/button';
 
 const CodeEditor = () => {
-  const [code, setCode] = useState(''); // User-written code
-  const [description, setDescription] = useState(''); // Description of the code
-  const [completedCode, setCompletedCode] = useState(''); // AI-completed code
-  const [showCompletedCode, setShowCompletedCode] = useState(false); // Controls visibility of the completed code block
+  const [code, setCode] = useState(`# Enter your code here
 
-  // The block to ignore
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+`);
+  const [description, setDescription] = useState('');
+  const [completedCode, setCompletedCode] = useState('');
+  const [commentedCode, setCommentedCode] = useState('');
+  const [showCompletedCode, setShowCompletedCode] = useState(false);
+  const [showCommentedCode, setShowCommentedCode] = useState(false);
+
   const blockToIgnore = "Description and Prediction: This code defines a simple calculator function that takes user input for a mathematical operation and two numbers, then performs the chosen operation and displays the result. It appears to be a basic implementation of a command-line calculator for a beginner programming exercise or tutorial.";
 
-  // Function to filter the description
   const filterDescription = (text) => {
     if (text.startsWith(blockToIgnore)) {
       return text.slice(blockToIgnore.length).trim();
@@ -21,30 +42,26 @@ const CodeEditor = () => {
     return text;
   };
 
-  // Function to format the description with bold headings and normal text
   const formatDescription = (text) => {
-    // Split the text into lines
     const lines = text.split('\n');
     return lines.map((line, index) => {
-      // Check if the line contains headings with bold text
-      const boldTextPattern = /(\*\*[^*]+\*\*)/g; // Matches text wrapped in ** **
-      const parts = line.split(boldTextPattern); // Split the line into parts based on the bold pattern
+      const boldTextPattern = /(\*\*[^*]+\*\*)/g;
+      const parts = line.split(boldTextPattern);
       return (
         <div key={index}>
           {parts.map((part, i) =>
-            part.match(boldTextPattern) ? ( // If the part matches the bold pattern
-              <strong key={i}>{part.replace(/\*\*/g, '')}</strong> // Render bold and remove the asterisks
+            part.match(boldTextPattern) ? (
+              <strong key={i} className="font-semibold text-indigo-700">{part.replace(/\*\*/g, '')}</strong>
             ) : (
-              part // Render normal text
+              part
             )
           )}
-          <br /> {/* Add line break after each line */}
+          <br />
         </div>
       );
     });
   };
 
-  // Function to analyze code using the /describe_code endpoint
   const analyzeCode = async (newCode) => {
     try {
       const response = await fetch('https://prakharjain1509.pythonanywhere.com/describe_code', {
@@ -55,14 +72,12 @@ const CodeEditor = () => {
         body: JSON.stringify({ code: newCode }),
       });
       const data = await response.json();
-      // Filter the description to ignore the specific block
       setDescription(filterDescription(data.description));
     } catch (error) {
       console.error('Error analyzing code:', error);
     }
   };
 
-  // Function to complete the code using the /complete_code endpoint
   const completeCode = async () => {
     try {
       const response = await fetch('https://prakharjain1509.pythonanywhere.com/complete_code', {
@@ -74,27 +89,46 @@ const CodeEditor = () => {
       });
       const data = await response.json();
       setCompletedCode(data.completed_code);
-      setShowCompletedCode(true); // Show the completed code block
+      setShowCompletedCode(true);
+      setShowCommentedCode(false);
     } catch (error) {
       console.error('Error completing code:', error);
     }
   };
 
-  // Replace the user's code with the completed code
-  const replaceCode = () => {
-    setCode(completedCode);
-    setCompletedCode(''); // Clear the completed code after replacement
-    setShowCompletedCode(false); // Hide the completed code block
+  const commentCode = async () => {
+    try {
+      const response = await fetch('https://prakharjain1509.pythonanywhere.com/comment_code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code }),
+      });
+      const data = await response.json();
+      setCommentedCode(data.commented_code);
+      setShowCommentedCode(true);
+      setShowCompletedCode(false);
+    } catch (error) {
+      console.error('Error commenting code:', error);
+    }
   };
 
-  // Initialize CodeMirror editor
+  const replaceCode = (newCode) => {
+    setCode(newCode);
+    setCompletedCode('');
+    setCommentedCode('');
+    setShowCompletedCode(false);
+    setShowCommentedCode(false);
+  };
+
   const { setContainer } = useCodeMirror({
     value: code,
-    extensions: [python()], // Using Python syntax highlighting
-    onChange: (value) => setCode(value), // Update code state on change
+    extensions: [python()],
+    onChange: (value) => setCode(value),
+    theme: 'dark',
   });
 
-  // Trigger code analysis after 500ms of stopping typing
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       analyzeCode(code);
@@ -103,58 +137,74 @@ const CodeEditor = () => {
   }, [code]);
 
   return (
-    <div className="flex gap-4 p-4">
-      <div className="flex-1" style={{ flexBasis: '70%' }}>
-        <Card className="card h-full">
-          <CardHeader className="card-header">
-            <CardTitle className="card-title">Code Editor</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div ref={setContainer} className="h-[400px]" />
-          </CardContent>
-        </Card>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100">
+      {/*<header className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">*/}
+      {/*  <h1 className="text-4xl font-extrabold text-center tracking-tight">AI Code Completer</h1>*/}
+      {/*</header>*/}
+      <main className="container mx-auto p-6">
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex-1">
+            <Card className="h-full shadow-xl rounded-lg overflow-hidden border border-gray-200">
+              <CardHeader className="bg-white border-b border-gray-200">
+                <CardTitle className="text-center text-xl font-bold text-gray-800">Code Editor</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div ref={setContainer} className="h-[400px] overflow-auto bg-gray-900 text-white" />
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Completed Code block (conditionally rendered) */}
-      {showCompletedCode && (
-        <div className="flex-1" style={{ flexBasis: '70%' }}>
-          <Card className="card h-full">
-            <CardHeader className="card-header">
-              <CardTitle className="card-title">Completed Code</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px] overflow-y-auto bg-gray-100 p-2">
-                <pre>{completedCode}</pre>
-              </div>
-              <Button className="button mt-4" onClick={replaceCode} style={{ width: '100px' }}>
-                Replace Code
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Code Description */}
-      <div className="flex-1" style={{ flexBasis: '30%' }}>
-        <Card className="card h-full">
-          <CardHeader className="card-header">
-            <CardTitle className="card-title">Code Description</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[400px] overflow-y-auto">
-              {description ? formatDescription(description) : 'Code description will appear here...'}
+          {(showCompletedCode || showCommentedCode) && (
+            <div className="flex-1">
+              <Card className="h-full shadow-xl rounded-lg overflow-hidden border border-gray-200">
+                <CardHeader className="bg-white border-b border-gray-200">
+                  <CardTitle className="text-center text-xl font-bold text-gray-800">
+                    {showCompletedCode ? "Completed Code" : "Commented Code"}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="h-[350px] overflow-y-auto bg-gray-900 p-4 rounded-md">
+                    <pre className="text-white font-mono text-sm">{showCompletedCode ? completedCode : commentedCode}</pre>
+                  </div>
+                  <Button
+                    className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out transform hover:-translate-y-1"
+                    onClick={() => replaceCode(showCompletedCode ? completedCode : commentedCode)}
+                  >
+                    Replace Code
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
-            {/* Button to trigger code completion */}
-            {!showCompletedCode && (
-              <div className="flex justify-center w-full">
-                <Button className="button" onClick={completeCode} style={{ width: '100px' }}>
-                  Complete this Code
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+          )}
+
+          <div className="flex-1">
+            <Card className="h-full shadow-xl rounded-lg overflow-hidden border border-gray-200">
+              <CardHeader className="bg-white border-b border-gray-200">
+                <CardTitle className="text-center text-xl font-bold text-gray-800">Code Description</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="h-[350px] overflow-y-auto text-gray-700">
+                  {description ? formatDescription(description) : 'Code description will appear here...'}
+                </div>
+                <div className="mt-4 flex space-x-4">
+                  <Button
+                    className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out transform hover:-translate-y-1"
+                    onClick={completeCode}
+                  >
+                    Complete this Code
+                  </Button>
+                  <Button
+                    className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out transform hover:-translate-y-1"
+                    onClick={commentCode}
+                  >
+                    Comment this Code
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </main>
     </div>
   );
 };
