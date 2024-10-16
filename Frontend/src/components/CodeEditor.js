@@ -3,6 +3,7 @@ import { useCodeMirror } from '@uiw/react-codemirror';
 import { python } from '@codemirror/lang-python';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import Button from './ui/button';
+import { Loader2 } from 'lucide-react';
 
 const CodeEditor = () => {
   const [code, setCode] = useState(`# Enter your code here
@@ -32,8 +33,10 @@ const CodeEditor = () => {
   const [commentedCode, setCommentedCode] = useState('');
   const [showCompletedCode, setShowCompletedCode] = useState(false);
   const [showCommentedCode, setShowCommentedCode] = useState(false);
+  const [loadingComplete, setLoadingComplete] = useState(false);
+  const [loadingComment, setLoadingComment] = useState(false);
 
-  const blockToIgnore = "Description and Prediction: This code defines a simple calculator function that takes user input for a mathematical operation and two numbers, then performs the chosen operation and displays the result. It appears to be a basic implementation of a command-line calculator for a beginner programming exercise or tutorial.";
+  const blockToIgnore = "Description and Prediction: This code defines a simple calculator function...";
 
   const filterDescription = (text) => {
     if (text.startsWith(blockToIgnore)) {
@@ -66,9 +69,7 @@ const CodeEditor = () => {
     try {
       const response = await fetch('https://prakharjain1509.pythonanywhere.com/describe_code', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: newCode }),
       });
       const data = await response.json();
@@ -79,12 +80,11 @@ const CodeEditor = () => {
   };
 
   const completeCode = async () => {
+    setLoadingComplete(true);
     try {
       const response = await fetch('https://prakharjain1509.pythonanywhere.com/complete_code', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code }),
       });
       const data = await response.json();
@@ -94,15 +94,15 @@ const CodeEditor = () => {
     } catch (error) {
       console.error('Error completing code:', error);
     }
+    setLoadingComplete(false);
   };
 
   const commentCode = async () => {
+    setLoadingComment(true);
     try {
       const response = await fetch('https://prakharjain1509.pythonanywhere.com/comment_code', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code }),
       });
       const data = await response.json();
@@ -112,6 +112,7 @@ const CodeEditor = () => {
     } catch (error) {
       console.error('Error commenting code:', error);
     }
+    setLoadingComment(false);
   };
 
   const replaceCode = (newCode) => {
@@ -130,17 +131,12 @@ const CodeEditor = () => {
   });
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      analyzeCode(code);
-    }, 500);
+    const timeoutId = setTimeout(() => analyzeCode(code), 500);
     return () => clearTimeout(timeoutId);
   }, [code]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100">
-      {/*<header className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">*/}
-      {/*  <h1 className="text-4xl font-extrabold text-center tracking-tight">AI Code Completer</h1>*/}
-      {/*</header>*/}
       <main className="container mx-auto p-6">
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1">
@@ -159,12 +155,14 @@ const CodeEditor = () => {
               <Card className="h-full shadow-xl rounded-lg overflow-hidden border border-gray-200">
                 <CardHeader className="bg-white border-b border-gray-200">
                   <CardTitle className="text-center text-xl font-bold text-gray-800">
-                    {showCompletedCode ? "Completed Code" : "Commented Code"}
+                    {showCompletedCode ? 'Completed Code' : 'Commented Code'}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
-                  <div className="h-[350px] overflow-y-auto bg-gray-900 p-4 rounded-md">
-                    <pre className="text-white font-mono text-sm">{showCompletedCode ? completedCode : commentedCode}</pre>
+                  <div className="h-[350px] overflow-auto bg-gray-900 p-4 rounded-md">
+                    <pre className="text-white font-mono text-sm whitespace-pre-wrap">
+                      {showCompletedCode ? completedCode : commentedCode}
+                    </pre>
                   </div>
                   <Button
                     className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out transform hover:-translate-y-1"
@@ -183,21 +181,31 @@ const CodeEditor = () => {
                 <CardTitle className="text-center text-xl font-bold text-gray-800">Code Description</CardTitle>
               </CardHeader>
               <CardContent className="p-4">
-                <div className="h-[350px] overflow-y-auto text-gray-700">
+                <div className="h-[350px] overflow-auto text-gray-700">
                   {description ? formatDescription(description) : 'Code description will appear here...'}
                 </div>
                 <div className="mt-4 flex space-x-4">
                   <Button
                     className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out transform hover:-translate-y-1"
                     onClick={completeCode}
+                    disabled={loadingComplete}
                   >
-                    Complete this Code
+                    {loadingComplete ? (
+                      <Loader2 className="h-5 w-5 animate-spin mx-auto" />
+                    ) : (
+                      'Complete this Code'
+                    )}
                   </Button>
                   <Button
                     className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out transform hover:-translate-y-1"
                     onClick={commentCode}
+                    disabled={loadingComment}
                   >
-                    Comment this Code
+                    {loadingComment ? (
+                      <Loader2 className="h-5 w-5 animate-spin mx-auto" />
+                    ) : (
+                      'Comment this Code'
+                    )}
                   </Button>
                 </div>
               </CardContent>
