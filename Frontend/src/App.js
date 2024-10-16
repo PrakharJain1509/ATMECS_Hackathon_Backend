@@ -17,7 +17,7 @@ function App() {
         <div className="container mx-auto">
           <h1 className="text-4xl md:text-6xl font-extrabold text-center tracking-tight mb-4 drop-shadow-lg">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-200">
-              Code Generation & Completion Chatbot
+              Code Generation & Completion Tool
             </span>
           </h1>
           <p className="mt-3 text-xl md:text-2xl text-center font-light text-blue-100 italic drop-shadow">
